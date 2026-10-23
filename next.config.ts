@@ -13,6 +13,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  outputFileTracingIncludes: {
+    "/api/**/*": ["./prisma/library.db"],
+    "/**/*": ["./prisma/library.db"],
+  },
 };
 
 export default nextConfig;
