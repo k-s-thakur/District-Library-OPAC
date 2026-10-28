@@ -1,25 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
-import { getMemberDetails } from "@/lib/services/member.service";
+import { SAMPLE_MEMBER, IN_MEMORY_RESERVATIONS, BOOKS } from "@/data/mockData";
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const session = await getCurrentUser();
-    if (!session) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    }
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const sessionCookie = request.cookies.get("library_session");
 
-    const { id } = await params;
-    const isStaff = ["SUPER_ADMIN", "LIBRARY_ADMIN", "LIBRARIAN", "ACCOUNTS_OPERATOR"].includes(session.role);
-
-    // If citizen/member, can ONLY query their own account
-    if (!isStaff && session.memberId !== id) {
-      return NextResponse.json({ error: "Access denied. You can only view your own library account." }, { status: 403 });
-    }
-
-    const member = await getMemberDetails(id);
-    return NextResponse.json({ member });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 404 });
+  if (!sessionCookie) {
+    return NextResponse.json(
+      { error: "Unauthorized. Please sign in." },
+      { status: 401 }
+    );
   }
+
+  // Clone member data and enrich with any in-memory reservations
+  const member = JSON.parse(JSON.stringify(SAMPLE_MEMBER));
+  
+  // Attach any active reservations made during the session
+  const activeReservations = IN_MEMORY_RESERVATIONS.filter(r => r.memberId === id || r.memberId === member.id);
+  activeReservations.forEach(r => {
+    const book = BOOKS.find(b => b.id === r.bookId);
+    member.reservations.push({
+      id: r.id,
+      bookId: r.bookId,
+      queuePosition: r.queuePosition,
+      status: r.status,
+      reservedAt: r.createdAt,
+      bookTitle: book?.title || "Reserved Title",
+    });
+  });
+
+  return NextResponse.json({ member });
 }

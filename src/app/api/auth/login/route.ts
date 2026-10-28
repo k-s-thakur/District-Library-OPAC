@@ -1,112 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { comparePassword, createSessionToken, SessionUser, UserRole } from "@/lib/auth";
+import { DEMO_USERS } from "@/data/mockData";
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json();
-    const { identifier, password, role } = body;
+    const body = await request.json();
+    let user = null;
 
-    let user: SessionUser | null = null;
-
-    // 1. Quick demo switch mode (for instant tester convenience)
-    if (role && !identifier) {
-      if (role === "MEMBER") {
-        const member = await prisma.member.findFirst({ where: { status: "ACTIVE" } });
-        if (!member) return NextResponse.json({ error: "No active member found" }, { status: 404 });
-        user = {
-          id: member.id,
-          email: member.email,
-          name: member.fullName,
-          role: "MEMBER",
-          memberId: member.id,
-          memberNo: member.memberNo,
-          category: member.category,
-        };
+    if (body.role && DEMO_USERS[body.role]) {
+      user = DEMO_USERS[body.role];
+    } else if (body.identifier) {
+      const id = body.identifier.toLowerCase();
+      if (id.includes("librarian") || id.includes("patel")) {
+        user = DEMO_USERS.LIBRARIAN;
+      } else if (id.includes("accounts") || id.includes("agarwal")) {
+        user = DEMO_USERS.ACCOUNTS_OPERATOR;
+      } else if (id.includes("admin") || id.includes("thakur")) {
+        user = DEMO_USERS.SUPER_ADMIN;
       } else {
-        const staff = await prisma.staffUser.findFirst({ where: { role } });
-        if (!staff) return NextResponse.json({ error: `Staff role ${role} not found` }, { status: 404 });
-        user = {
-          id: staff.id,
-          email: staff.email,
-          name: staff.name,
-          role: staff.role as UserRole,
-        };
+        // Default citizen member (Rahul Verma)
+        user = DEMO_USERS.MEMBER;
       }
     } else {
-      // 2. Real credential check
-      if (!identifier || !password) {
-        return NextResponse.json({ error: "Identifier (Email or Member No) and Password are required." }, { status: 400 });
-      }
-
-      // Check staff first
-      const staff = await prisma.staffUser.findFirst({
-        where: { email: identifier.trim().toLowerCase() },
-      });
-
-      if (staff) {
-        const matches = await comparePassword(password, staff.passwordHash);
-        if (!matches) {
-          return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
-        }
-        user = {
-          id: staff.id,
-          email: staff.email,
-          name: staff.name,
-          role: staff.role as UserRole,
-        };
-      } else {
-        // Check member
-        const member = await prisma.member.findFirst({
-          where: {
-            OR: [
-              { email: identifier.trim().toLowerCase() },
-              { memberNo: identifier.trim() },
-            ],
-          },
-        });
-
-        if (!member) {
-          return NextResponse.json({ error: "Account not found with this identifier." }, { status: 401 });
-        }
-
-        const validPassword = member.passwordHash
-          ? await comparePassword(password, member.passwordHash)
-          : password === "Member@123";
-
-        if (!validPassword) {
-          return NextResponse.json({ error: "Invalid credentials." }, { status: 401 });
-        }
-
-        user = {
-          id: member.id,
-          email: member.email,
-          name: member.fullName,
-          role: "MEMBER",
-          memberId: member.id,
-          memberNo: member.memberNo,
-          category: member.category,
-        };
-      }
+      return NextResponse.json(
+        { error: "Invalid credentials or role specified." },
+        { status: 400 }
+      );
     }
 
-    if (!user) {
-      return NextResponse.json({ error: "Authentication failed." }, { status: 401 });
-    }
+    const response = NextResponse.json({
+      success: true,
+      user,
+    });
 
-    const token = await createSessionToken(user);
-    const response = NextResponse.json({ success: true, user });
-
-    response.cookies.set("library_session", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7,
+    // Set cookie for session persistence (7 days)
+    response.cookies.set("library_session", user.role, {
       path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+      sameSite: "lax",
     });
 
     return response;
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error?.message || "Login failed." },
+      { status: 500 }
+    );
   }
 }

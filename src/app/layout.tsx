@@ -19,12 +19,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `
-              try {
-                const t = localStorage.getItem('gplms-theme');
-                if (t) document.documentElement.setAttribute('data-theme', t);
-              } catch(e) {}
-            `,
+            __html: `try { const t = localStorage.getItem('gplms-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch(e) {}`,
           }}
         />
       </head>

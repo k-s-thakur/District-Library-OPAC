@@ -1,125 +1,94 @@
-"use client";
-
+import React from "react";
 import Link from "next/link";
-import { BookOpen, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { MapPin } from "lucide-react";
 
-export interface BookCardProps {
+interface BookCardProps {
   id: string;
-  isbn: string;
   title: string;
-  subtitle?: string | null;
+  subtitle?: string;
   authors: string;
-  coverImageUrl?: string | null;
-  category?: { name: string; code: string } | null;
-  availabilityStatus: "Available" | "All copies issued" | "Reference only" | "Availability unknown";
+  coverImageUrl?: string;
+  category: {
+    id?: string;
+    name: string;
+    code: string;
+    ddcPrefix?: string;
+  };
+  availabilityStatus: string;
   availableCopies: number;
   totalCopies: number;
-  primaryLocation?: string;
-  publicationYear?: number | null;
+  primaryLocation: string;
 }
 
 export default function BookCard({
   id,
   title,
-  subtitle,
   authors,
   coverImageUrl,
   category,
-  availabilityStatus,
   availableCopies,
-  totalCopies,
   primaryLocation,
 }: BookCardProps) {
-  const getStatusBadge = () => {
-    switch (availabilityStatus) {
-      case "Available":
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <CheckCircle className="w-3 h-3" />
-            <span>Available ({availableCopies}/{totalCopies})</span>
-          </span>
-        );
-      case "All copies issued":
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
-            <Clock className="w-3 h-3" />
-            <span>All Issued ({totalCopies})</span>
-          </span>
-        );
-      case "Reference only":
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-300">
-            <BookOpen className="w-3 h-3" />
-            <span>Reference Hall</span>
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200">
-            <AlertCircle className="w-3 h-3" />
-            <span>Status Unknown</span>
-          </span>
-        );
-    }
-  };
+  const isAvailable = availableCopies > 0;
 
   return (
     <Link
       href={`/books/${id}`}
-      className="group flex flex-col bg-white rounded-xl border border-slate-200/80 overflow-hidden book-shadow book-shadow-hover focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2"
+      className="group flex flex-col bg-white rounded-xl border border-slate-200/80 overflow-hidden hover:border-teal-300 hover:shadow-md transition-all duration-200"
     >
-      {/* 2:3 Aspect Ratio Book Cover Container */}
-      <div className="relative aspect-[2/3] w-full bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden flex items-center justify-center">
+      {/* Book Cover Image */}
+      <div className="relative aspect-[3/4] w-full bg-slate-100 overflow-hidden">
         {coverImageUrl ? (
           <img
             src={coverImageUrl}
             alt={title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300"
             loading="lazy"
           />
         ) : (
           <div className="w-full h-full p-4 flex flex-col justify-between bg-gradient-to-br from-teal-800 to-slate-900 text-white">
-            <div className="flex justify-between items-start">
-              <span className="text-[10px] uppercase tracking-wider font-semibold opacity-75">
-                {category?.name || "Library Holding"}
-              </span>
-              <BookOpen className="w-4 h-4 opacity-75" />
-            </div>
-            <div>
-              <h4 className="font-serif text-sm font-bold leading-snug line-clamp-3">
-                {title}
-              </h4>
-              <p className="text-xs text-teal-200 mt-1 line-clamp-1">{authors}</p>
-            </div>
-            <div className="text-[9px] font-mono text-slate-400">Government Public Library</div>
+            <span className="text-[10px] font-mono text-teal-300">OPAC</span>
+            <h4 className="font-serif text-sm font-bold line-clamp-3">{title}</h4>
+            <span className="text-[10px] text-slate-300">{authors}</span>
           </div>
         )}
 
-        {/* Subtle Spine Highlight */}
-        <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-r from-black/20 to-transparent pointer-events-none" />
+        {/* Category Pill */}
+        <div className="absolute top-2 left-2">
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white/95 text-slate-700 shadow-xs backdrop-blur-xs">
+            {category.name}
+          </span>
+        </div>
       </div>
 
-      {/* Book Metadata */}
+      {/* Book Details */}
       <div className="p-3.5 flex-1 flex flex-col justify-between space-y-2">
-        <div className="space-y-1">
-          {category && (
-            <span className="text-[10px] font-semibold text-teal-700 tracking-wide uppercase">
-              {category.name}
-            </span>
-          )}
-          <h3 className="font-serif text-sm font-semibold text-slate-900 group-hover:text-teal-700 transition-colors line-clamp-2 leading-tight">
+        <div>
+          <h3 className="font-serif text-sm font-bold text-slate-900 group-hover:text-teal-700 transition leading-snug line-clamp-2">
             {title}
           </h3>
-          <p className="text-xs text-slate-600 line-clamp-1">By {authors}</p>
+          <p className="text-xs text-slate-500 mt-1 line-clamp-1">{authors}</p>
         </div>
 
-        <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-          {getStatusBadge()}
-          {primaryLocation && (
-            <span className="text-[10px] text-slate-500 truncate max-w-[90px]" title={primaryLocation}>
-              {primaryLocation.split(",")[0]}
-            </span>
-          )}
+        {/* Shelf Coordinates & Status */}
+        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+          <div className="flex items-center gap-1 text-slate-500 truncate mr-1">
+            <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+            <span className="truncate">{primaryLocation}</span>
+          </div>
+
+          <div className="shrink-0">
+            {isAvailable ? (
+              <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span>Available</span>
+              </span>
+            ) : (
+              <span className="text-rose-600 font-medium bg-rose-50 px-2 py-0.5 rounded-full">
+                Checked Out
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </Link>

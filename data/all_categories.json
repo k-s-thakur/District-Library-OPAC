@@ -1,0 +1,74 @@
+{
+  "categories": [
+    {
+      "id": "d800bf76-1050-4e47-94f3-5a517193839d",
+      "name": "Children & Young Adults",
+      "code": "CHILDREN",
+      "ddcPrefix": "823",
+      "description": "Illustrated fables, Panchatantra, Ruskin Bond tales and science adventures",
+      "iconName": "Sparkles",
+      "accentColor": "emerald",
+      "booksCount": 1
+    },
+    {
+      "id": "89696b92-0e99-42e8-bdf9-87791f0151f8",
+      "name": "Constitution & Law",
+      "code": "LAW_GOV",
+      "ddcPrefix": "340",
+      "description": "Indian constitutional commentaries, public administration, and jurisprudence",
+      "iconName": "Scale",
+      "accentColor": "rose",
+      "booksCount": 1
+    },
+    {
+      "id": "b3b120eb-1236-4934-b2b0-a7ff6d586dcb",
+      "name": "Fiction & World Literature",
+      "code": "LITERATURE",
+      "ddcPrefix": "800",
+      "description": "Novels, regional classics, poetry, drama and prose masters",
+      "iconName": "BookOpen",
+      "accentColor": "teal",
+      "booksCount": 3
+    },
+    {
+      "id": "a7e8df95-88e9-4499-bafa-191f2283a597",
+      "name": "History & Heritage",
+      "code": "HISTORY",
+      "ddcPrefix": "900",
+      "description": "Indian freedom struggle, ancient civilisations, biographies and world history",
+      "iconName": "Landmark",
+      "accentColor": "amber",
+      "booksCount": 2
+    },
+    {
+      "id": "b140996a-0618-4bc3-aeb4-2c2e1905ac0e",
+      "name": "Philosophy & Self-Growth",
+      "code": "PHILOSOPHY",
+      "ddcPrefix": "100",
+      "description": "Indian philosophical traditions, ethics, logic, and self-realization",
+      "iconName": "Brain",
+      "accentColor": "purple",
+      "booksCount": 1
+    },
+    {
+      "id": "35ac2127-5f0c-44ec-86eb-1c1a81164439",
+      "name": "Science & Astronomy",
+      "code": "SCIENCE",
+      "ddcPrefix": "500",
+      "description": "Physics, astronomy, biology, astrophysics and environmental sciences",
+      "iconName": "Compass",
+      "accentColor": "blue",
+      "booksCount": 2
+    },
+    {
+      "id": "69e753b0-46c6-488c-9775-25a5d79766e0",
+      "name": "Technology & Computing",
+      "code": "CS_TECH",
+      "ddcPrefix": "004",
+      "description": "Computer programming, algorithms, operating systems, and networks",
+      "iconName": "Cpu",
+      "accentColor": "indigo",
+      "booksCount": 2
+    }
+  ]
+}

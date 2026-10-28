@@ -1,30 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { Bookmark, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, AlertCircle, Loader2, Bookmark } from "lucide-react";
 
 interface ReservationButtonProps {
   bookId: string;
   availableCopies: number;
   totalCopies: number;
-  activeReservationsCount: number;
+  activeReservationsCount?: number;
 }
 
 export default function ReservationButton({
   bookId,
   availableCopies,
   totalCopies,
-  activeReservationsCount,
+  activeReservationsCount = 0,
 }: ReservationButtonProps) {
   const [loading, setLoading] = useState(false);
-  const [successMsg, setSuccessMsg] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleReserve = async () => {
     setLoading(true);
-    setSuccessMsg("");
-    setErrorMsg("");
+    setSuccessMessage("");
+    setErrorMessage("");
 
     try {
       const res = await fetch("/api/circulation/reserve", {
@@ -32,21 +32,22 @@ export default function ReservationButton({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bookId }),
       });
-
       const data = await res.json();
 
       if (!res.ok) {
         if (res.status === 401) {
-          throw new Error("Please sign in as a registered library member to reserve this title.");
+          throw new Error(
+            "Please sign in as a registered library member to reserve this title."
+          );
         }
         throw new Error(data.error || "Reservation request could not be processed.");
       }
 
-      setSuccessMsg(
+      setSuccessMessage(
         `Reservation confirmed! You are position #${data.queuePosition} in queue. You will be notified when a copy is returned to the shelf.`
       );
     } catch (err: any) {
-      setErrorMsg(err.message);
+      setErrorMessage(err.message);
     } finally {
       setLoading(false);
     }
@@ -79,22 +80,22 @@ export default function ReservationButton({
         </button>
       )}
 
-      {/* Success Notification */}
-      {successMsg && (
+      {/* Success banner */}
+      {successMessage && (
         <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-800 flex items-start gap-2">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-          <span>{successMsg}</span>
+          <span>{successMessage}</span>
         </div>
       )}
 
-      {/* Error / Login prompt */}
-      {errorMsg && (
+      {/* Error banner */}
+      {errorMessage && (
         <div className="p-3 bg-rose-50 rounded-xl border border-rose-200 text-xs text-rose-800 flex flex-col gap-2">
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-            <span>{errorMsg}</span>
+            <span>{errorMessage}</span>
           </div>
-          {errorMsg.includes("sign in") && (
+          {errorMessage.includes("sign in") && (
             <Link
               href="/login"
               className="text-center py-1.5 bg-rose-700 hover:bg-rose-800 text-white rounded-lg font-semibold text-xs transition"

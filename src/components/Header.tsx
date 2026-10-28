@@ -1,46 +1,27 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
-  Search,
   BookOpen,
-  ChevronDown,
+  Search,
   User,
   LogOut,
   Menu,
   X,
-  Compass,
-  Bookmark,
-  Building2,
-  Clock,
-  Sparkles,
-  Info,
-  ShieldCheck,
+  Compass
 } from "lucide-react";
-import ThemeSwitcher from "@/components/ThemeSwitcher";
-
-interface SessionUser {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-  memberId?: string | null;
-  memberNo?: string | null;
-}
+import { User as UserType } from "@/types";
 
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
-  const [discoverOpen, setDiscoverOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const discoverRef = useRef<HTMLDivElement>(null);
 
-  const fetchUser = async () => {
+  const fetchCurrentUser = async () => {
     try {
       const res = await fetch("/api/auth/me");
       const data = await res.json();
@@ -51,38 +32,14 @@ export default function Header() {
   };
 
   useEffect(() => {
-    fetchUser();
+    fetchCurrentUser();
   }, [pathname]);
 
-  // Close discover dropdown on outside click
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (discoverRef.current && !discoverRef.current.contains(event.target as Node)) {
-        setDiscoverOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleGlobalSearch = (e: React.FormEvent) => {
+  const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
-    router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-    setMobileMenuOpen(false);
-  };
-
-  const handleRoleQuickSwitch = async (role: string) => {
-    try {
-      await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role }),
-      });
-      await fetchUser();
-      window.location.reload();
-    } catch (e) {
-      console.error(e);
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setMobileMenuOpen(false);
     }
   };
 
@@ -93,324 +50,198 @@ export default function Header() {
     router.refresh();
   };
 
-  const isStaff =
-    currentUser &&
-    ["SUPER_ADMIN", "LIBRARY_ADMIN", "LIBRARIAN", "ACCOUNTS_OPERATOR", "APPROVING_OFFICER"].includes(
-      currentUser.role
-    );
-
-  if (pathname?.startsWith("/staff")) {
-    return null;
-  }
-
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-xs">
-      {/* 1. Official Government Utility Bar */}
-      <div className="bg-slate-900 text-slate-300 text-xs py-1.5 px-4 sm:px-8 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-3">
-          <span className="flex h-2 w-2 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
-          </span>
-          <span className="font-medium text-slate-100">
-            सार्वजनिक ई-पुस्तकालय · Government Public Library
-          </span>
-          <span className="hidden md:inline text-slate-500">|</span>
-          <span className="hidden md:inline text-slate-400 font-mono text-[11px]">
-            National Digital Library Node · CGO Complex, New Delhi
-          </span>
-        </div>
-
-        {/* Quick Demo Role Switcher */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-slate-400 text-[11px] mr-1 hidden sm:inline">Role preview:</span>
-          {[
-            { role: "MEMBER", label: "Citizen (Rahul)" },
-            { role: "LIBRARIAN", label: "Librarian (Patel)" },
-            { role: "ACCOUNTS_OPERATOR", label: "Accounts" },
-            { role: "SUPER_ADMIN", label: "Super Admin" },
-          ].map((item) => {
-            const active = currentUser?.role === item.role;
-            return (
-              <button
-                key={item.role}
-                onClick={() => handleRoleQuickSwitch(item.role)}
-                className={`px-2 py-0.5 rounded text-[11px] font-medium transition cursor-pointer ${
-                  active
-                    ? "bg-teal-500 text-slate-950 font-bold"
-                    : "bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white"
-                }`}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 2. Main Discovery Masthead */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
-        {/* Library Brand Identity */}
-        <div className="flex items-center gap-6 shrink-0">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-11 h-11 rounded-xl bg-teal-700 text-white flex items-center justify-center shadow-md group-hover:bg-teal-800 transition">
-              <Building2 className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-slate-900 group-hover:text-teal-700 transition">
-                  GPLMS
-                </span>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-teal-100 text-teal-800 rounded">
-                  OPAC
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 hidden sm:block">
-                Online Public Access Catalogue
-              </p>
-            </div>
-          </Link>
-
-          {/* Discover Menu Dropdown */}
-          <div className="relative hidden md:block" ref={discoverRef}>
-            <button
-              onClick={() => setDiscoverOpen(!discoverOpen)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 hover:text-teal-700 hover:bg-slate-50 transition cursor-pointer"
-              aria-expanded={discoverOpen}
-            >
-              <Compass className="w-4 h-4 text-teal-600" />
-              <span>Discover</span>
-              <ChevronDown className={`w-4 h-4 transition-transform ${discoverOpen ? "rotate-180" : ""}`} />
-            </button>
-
-            {discoverOpen && (
-              <div className="absolute left-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50">
-                <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Catalogue Discovery
-                </div>
-                <Link
-                  href="/categories"
-                  onClick={() => setDiscoverOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-900"
-                >
-                  <BookOpen className="w-4 h-4 text-teal-600" />
-                  <div>
-                    <div className="font-medium">Browse All Categories</div>
-                    <div className="text-xs text-slate-500">Explore by subject taxonomy</div>
-                  </div>
-                </Link>
-                <Link
-                  href="/search?sort=newest"
-                  onClick={() => setDiscoverOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-teal-50 hover:text-teal-900"
-                >
-                  <Sparkles className="w-4 h-4 text-amber-500" />
-                  <div>
-                    <div className="font-medium">Recently Added Titles</div>
-                    <div className="text-xs text-slate-500">Fresh catalogue acquisitions</div>
-                  </div>
-                </Link>
-                <div className="my-1 border-t border-slate-100" />
-                <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Popular Classifications
-                </div>
-                {[
-                  { label: "800 Literature & Classics", code: "LITERATURE" },
-                  { label: "500 Science & Astronomy", code: "SCIENCE" },
-                  { label: "004 Computing & Technology", code: "CS_TECH" },
-                  { label: "900 History & Heritage", code: "HISTORY" },
-                  { label: "340 Constitution & Law", code: "LAW_GOV" },
-                ].map((item) => (
-                  <Link
-                    key={item.code}
-                    href={`/search?category=${item.code}`}
-                    onClick={() => setDiscoverOpen(false)}
-                    className="block px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50 hover:text-teal-700"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            )}
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-xs">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-6">
+        {/* Brand / Logo */}
+        <Link href="/" className="flex items-center gap-3 shrink-0 group">
+          <div className="w-10 h-10 rounded-xl bg-teal-700 text-white flex items-center justify-center shadow-xs group-hover:bg-teal-800 transition">
+            <BookOpen className="w-5 h-5" />
           </div>
-        </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-serif text-lg font-bold tracking-tight text-slate-900 group-hover:text-teal-700 transition">
+                District Library
+              </span>
+              <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-teal-50 text-teal-700 rounded border border-teal-200/60">
+                OPAC
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 hidden sm:block">
+              Online Public Access Catalogue
+            </p>
+          </div>
+        </Link>
 
-        {/* Global Search Bar (Dominant Header Action) */}
+        {/* Global Search Bar (Desktop) */}
         <form
-          onSubmit={handleGlobalSearch}
-          className="flex-1 max-w-lg hidden sm:flex items-center relative"
+          onSubmit={handleSearchSubmit}
+          className="flex-1 max-w-md hidden md:flex items-center relative"
         >
           <div className="relative w-full">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search catalogue by title, author, ISBN or subject..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-24 py-2.5 rounded-full bg-slate-50 border border-slate-300 text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent transition-all"
+              placeholder="Search by title, author, subject, ISBN..."
+              className="w-full pl-9 pr-20 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-600/30 focus:border-teal-600 bg-slate-50 hover:bg-white transition"
             />
             <button
               type="submit"
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-full text-xs font-semibold shadow-xs transition cursor-pointer"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2.5 py-1 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-medium transition cursor-pointer"
             >
               Search
             </button>
           </div>
         </form>
 
-        {/* Navigation Links & Account Actions */}
-        <div className="flex items-center gap-3">
-          <ThemeSwitcher />
+        {/* Navigation Links */}
+        <nav className="hidden lg:flex items-center gap-6 text-sm font-medium">
+          <Link
+            href="/search"
+            className={`transition ${
+              pathname === "/search"
+                ? "text-teal-700 font-semibold"
+                : "text-slate-600 hover:text-teal-700"
+            }`}
+          >
+            Catalogue
+          </Link>
+          <Link
+            href="/categories"
+            className={`transition ${
+              pathname === "/categories"
+                ? "text-teal-700 font-semibold"
+                : "text-slate-600 hover:text-teal-700"
+            }`}
+          >
+            Categories
+          </Link>
+          <Link
+            href="/library-information"
+            className={`transition ${
+              pathname === "/library-information"
+                ? "text-teal-700 font-semibold"
+                : "text-slate-600 hover:text-teal-700"
+            }`}
+          >
+            Library Info
+          </Link>
+        </nav>
 
-          <nav className="hidden lg:flex items-center gap-4 text-sm font-medium text-slate-600">
-            <Link href="/library-information" className="hover:text-teal-700 transition">
-              About & Timings
-            </Link>
-            {isStaff && (
-              <Link
-                href="/staff/circulation"
-                className="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs flex items-center gap-1.5 transition"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-teal-700" />
-                <span>Staff Portal</span>
-              </Link>
-            )}
-          </nav>
-
-          {/* User Account / Sign In */}
+        {/* Right Section: Member Profile or Sign In */}
+        <div className="hidden sm:flex items-center gap-3">
           {currentUser ? (
-            <div className="relative">
-              <button
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-full border border-slate-200 bg-slate-50 hover:bg-slate-100 transition text-slate-800 cursor-pointer"
+            <div className="flex items-center gap-2.5">
+              <Link
+                href={currentUser.role === "MEMBER" ? "/account" : "/"}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 hover:border-teal-300 bg-slate-50 hover:bg-teal-50/50 transition text-xs"
               >
-                <div className="w-6 h-6 rounded-full bg-teal-700 text-white flex items-center justify-center text-xs font-bold">
+                <div className="w-6 h-6 rounded-full bg-teal-700 text-white flex items-center justify-center font-bold text-[11px]">
                   {currentUser.name.charAt(0)}
                 </div>
-                <span className="text-xs font-semibold max-w-[100px] truncate">
-                  {currentUser.name}
-                </span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
-              </button>
-
-              {userMenuOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50">
-                  <div className="px-4 py-2 border-b border-slate-100">
-                    <p className="text-xs font-bold text-slate-900">{currentUser.name}</p>
-                    <p className="text-[11px] text-slate-500 truncate">{currentUser.email}</p>
-                    <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-teal-50 text-teal-700">
-                      {currentUser.role}
-                    </span>
-                  </div>
-
-                  {currentUser.role === "MEMBER" && (
-                    <Link
-                      href="/account"
-                      onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                    >
-                      <Bookmark className="w-4 h-4 text-teal-600" />
-                      <span>My Borrowed Books & Dues</span>
-                    </Link>
-                  )}
-
-                  {isStaff && (
-                    <a
-                      href={process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3001"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-teal-700 hover:bg-teal-50"
-                    >
-                      <ShieldCheck className="w-4 h-4 text-teal-600" />
-                      <span>Staff Portal (Port 3001) ↗</span>
-                    </a>
-                  )}
-
-                  <div className="my-1 border-t border-slate-100" />
-                  <button
-                    onClick={() => {
-                      setUserMenuOpen(false);
-                      handleLogout();
-                    }}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 cursor-pointer"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Sign Out</span>
-                  </button>
+                <div className="text-left">
+                  <span className="font-semibold text-slate-800 block leading-tight">
+                    {currentUser.name}
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    {currentUser.memberNo || currentUser.role}
+                  </span>
                 </div>
-              )}
+              </Link>
+              <button
+                onClick={handleLogout}
+                title="Sign Out"
+                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
           ) : (
             <Link
               href="/login"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold shadow-xs transition"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-semibold shadow-xs transition"
             >
               <User className="w-3.5 h-3.5" />
               <span>Member Sign In</span>
             </Link>
           )}
+        </div>
 
-          {/* Mobile Menu Button */}
+        {/* Mobile Menu Button */}
+        <div className="flex items-center lg:hidden gap-2">
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="sm:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100"
             aria-label="Toggle menu"
+            className="p-2 text-slate-600 hover:text-teal-700 hover:bg-slate-50 rounded-lg"
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="sm:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-6 space-y-4">
-          <form onSubmit={handleGlobalSearch} className="relative">
+        <div className="lg:hidden border-t border-slate-100 bg-white px-4 py-4 space-y-3">
+          <form onSubmit={handleSearchSubmit} className="relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search books, authors, ISBN..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-lg bg-slate-100 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"
+              placeholder="Search catalogue..."
+              className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-600/30"
             />
           </form>
 
-          <nav className="flex flex-col space-y-2 text-sm font-medium text-slate-700">
-            <Link
-              href="/categories"
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-1.5 hover:text-teal-700"
-            >
-              Browse All Categories
-            </Link>
+          <div className="flex flex-col space-y-1 text-sm font-medium text-slate-700">
             <Link
               href="/search"
               onClick={() => setMobileMenuOpen(false)}
-              className="py-1.5 hover:text-teal-700"
+              className="p-2 hover:bg-slate-50 rounded-lg"
             >
-              Full Search Stacks
+              Catalogue
+            </Link>
+            <Link
+              href="/categories"
+              onClick={() => setMobileMenuOpen(false)}
+              className="p-2 hover:bg-slate-50 rounded-lg"
+            >
+              Categories
             </Link>
             <Link
               href="/library-information"
               onClick={() => setMobileMenuOpen(false)}
-              className="py-1.5 hover:text-teal-700"
+              className="p-2 hover:bg-slate-50 rounded-lg"
             >
-              Library Information & Timings
+              Library Info &amp; Rules
             </Link>
-            {isStaff && (
+            {currentUser ? (
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <Link
+                  href={currentUser.role === "MEMBER" ? "/account" : "/"}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2 text-teal-700 font-semibold"
+                >
+                  My Account ({currentUser.name})
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="p-2 text-xs text-rose-600 font-medium"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
               <Link
-                href="/staff/circulation"
+                href="/login"
                 onClick={() => setMobileMenuOpen(false)}
-                className="py-1.5 font-bold text-teal-700"
+                className="mt-2 py-2.5 px-4 bg-teal-700 text-white font-medium rounded-xl text-center text-xs"
               >
-                Staff Circulation Portal
+                Member Sign In
               </Link>
             )}
-          </nav>
-
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Theme</span>
-            <ThemeSwitcher />
           </div>
         </div>
       )}

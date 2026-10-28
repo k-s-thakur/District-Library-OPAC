@@ -1,31 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
-import { reserveBook } from "@/lib/services/circulation.service";
+import { addReservation, DEMO_USERS } from "@/data/mockData";
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
+  const sessionCookie = request.cookies.get("library_session");
+  
+  if (!sessionCookie || sessionCookie.value.toUpperCase() !== "MEMBER") {
+    return NextResponse.json(
+      { error: "Please sign in as a registered library member to reserve this title." },
+      { status: 401 }
+    );
+  }
+
   try {
-    const session = await getCurrentUser();
-    if (!session || !session.memberId) {
+    const body = await request.json();
+    const bookId = body.bookId;
+
+    if (!bookId) {
       return NextResponse.json(
-        { error: "Authentication required. Please log in as a registered library member to reserve titles." },
-        { status: 401 }
+        { error: "Book ID is required for reservation." },
+        { status: 400 }
       );
     }
 
-    const body = await req.json();
-    const { bookId } = body;
+    const member = DEMO_USERS.MEMBER;
+    const reservation = addReservation(bookId, member.id);
 
-    if (!bookId) {
-      return NextResponse.json({ error: "bookId is required" }, { status: 400 });
-    }
-
-    const result = await reserveBook({
-      memberId: session.memberId,
-      bookId,
+    return NextResponse.json({
+      success: true,
+      reservationId: reservation.id,
+      queuePosition: reservation.queuePosition,
+      message: `Reservation confirmed! You are position #${reservation.queuePosition} in queue.`,
     });
-
-    return NextResponse.json(result, { status: 201 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error?.message || "Reservation request could not be processed." },
+      { status: 500 }
+    );
   }
 }
