@@ -12,9 +12,43 @@ import {
 import BookCarousel from "@/components/BookCarousel";
 import { BOOKS, CATEGORIES } from "@/data/mockData";
 
-export default function HomePage() {
-  const featuredBooks = BOOKS.filter((b) => b.isEditorChoice || b.isFeatured);
-  const popularBooks = BOOKS.filter((b) => b.isPopular);
+async function getLiveCatalog() {
+  const adminUrl = process.env.ADMIN_PORTAL_URL || "http://localhost:3001";
+  try {
+    const [booksRes, catsRes] = await Promise.all([
+      fetch(`${adminUrl}/api/public/catalog/search?limit=30`, {
+        next: { revalidate: 30 },
+        signal: AbortSignal.timeout(3000),
+      }),
+      fetch(`${adminUrl}/api/public/catalog/categories`, {
+        next: { revalidate: 60 },
+        signal: AbortSignal.timeout(3000),
+      }),
+    ]);
+    if (booksRes.ok && catsRes.ok) {
+      const bData = await booksRes.json();
+      const cData = await catsRes.json();
+      if (bData.items && bData.items.length > 0) {
+        return {
+          books: bData.items,
+          categories: cData.categories && cData.categories.length > 0 ? cData.categories : CATEGORIES,
+        };
+      }
+    }
+  } catch {
+    // Admin offline fallback
+  }
+  return { books: BOOKS, categories: CATEGORIES };
+}
+
+export default async function HomePage() {
+  const { books, categories } = await getLiveCatalog();
+  const featuredBooks = books.filter((b: any) => b.isEditorChoice || b.isFeatured).length > 0
+    ? books.filter((b: any) => b.isEditorChoice || b.isFeatured)
+    : books.slice(0, 6);
+  const popularBooks = books.filter((b: any) => b.isPopular).length > 0
+    ? books.filter((b: any) => b.isPopular)
+    : books.slice(6);
 
   return (
     <div className="space-y-12 pb-16">
@@ -120,7 +154,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat: any) => (
               <Link
                 key={cat.id}
                 href={`/search?category=${cat.code}`}
