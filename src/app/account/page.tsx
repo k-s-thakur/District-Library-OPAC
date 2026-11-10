@@ -16,6 +16,8 @@ import {
   UserCheck
 } from "lucide-react";
 import { Member } from "@/types";
+import QRCodeSVG from "@/components/QRCodeSVG";
+import BarcodeSVG from "@/components/BarcodeSVG";
 
 export default function AccountPage() {
   const router = useRouter();
@@ -92,10 +94,10 @@ export default function AccountPage() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Clean Digital Member Card */}
       <div className="bg-teal-800 text-white rounded-2xl p-6 sm:p-7 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <div className="flex items-center gap-2 text-teal-200 text-xs font-medium">
             <CreditCard className="w-4 h-4" />
-            <span>Digital Library Card · Open Access</span>
+            <span>Digital Citizen Library Card · Open Access</span>
           </div>
 
           <h1 className="font-serif text-2xl font-bold">{member.fullName}</h1>
@@ -105,12 +107,22 @@ export default function AccountPage() {
             <span>Category: <strong className="text-white">{member.category}</strong></span>
             <span>Valid Until: <strong className="text-white">{new Date(member.expiryDate).toLocaleDateString()}</strong></span>
           </div>
+
+          <div className="pt-2">
+            <BarcodeSVG value={member.memberNo} width={180} height={36} showText={false} className="rounded" />
+          </div>
         </div>
 
-        <div className="bg-teal-900/60 p-3.5 rounded-xl border border-teal-700/60 text-center shrink-0">
-          <span className="text-[10px] uppercase font-bold text-teal-200 block">Quota</span>
-          <span className="font-serif text-2xl font-bold">{member.activeLoansCount} / {member.maxBooks}</span>
-          <span className="text-[10px] text-teal-300 block">Books issued</span>
+        <div className="flex items-center gap-4 shrink-0">
+          <div className="bg-white p-2 rounded-xl shadow-xs flex items-center justify-center">
+            <QRCodeSVG value={`CITIZEN-${member.memberNo}`} size={70} />
+          </div>
+
+          <div className="bg-teal-900/60 p-3.5 rounded-xl border border-teal-700/60 text-center">
+            <span className="text-[10px] uppercase font-bold text-teal-200 block">Quota</span>
+            <span className="font-serif text-2xl font-bold">{member.activeLoansCount} / {member.maxBooks}</span>
+            <span className="text-[10px] text-teal-300 block">Books issued</span>
+          </div>
         </div>
       </div>
 
