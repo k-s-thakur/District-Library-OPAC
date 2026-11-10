@@ -12,10 +12,52 @@ import BookCard from "@/components/BookCard";
 import DynamicBookCover from "@/components/DynamicBookCover";
 import { BOOKS } from "@/data/mockData";
 
+export const dynamicParams = true;
+
 export async function generateStaticParams() {
   return BOOKS.map((book) => ({
     id: book.id,
   }));
+}
+
+async function getLiveBook(id: string) {
+  const adminUrl = process.env.ADMIN_PORTAL_URL || "http://localhost:3001";
+  try {
+    const res = await fetch(`${adminUrl}/api/public/catalog/books/${id}`, {
+      next: { revalidate: 30 },
+      signal: AbortSignal.timeout(3000),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.book) {
+        const b = data.book;
+        return {
+          id: b.id,
+          isbn: b.isbn,
+          title: b.title,
+          subtitle: b.subtitle,
+          authors: b.authors || [],
+          category: {
+            id: b.category?.id || "cat-gen",
+            name: b.category?.name || "General",
+            code: b.category?.ddcCode || "000",
+            icon: "BookOpen",
+          },
+          publisher: b.publisher?.name || "Library Press",
+          edition: b.edition || "Standard",
+          publicationYear: b.publicationYear || 2026,
+          language: b.language || "English",
+          ddcCode: b.ddcCode || "000",
+          description: b.description,
+          totalCopies: b.totalCopies || 1,
+          availableCopies: b.availableCopies !== undefined ? b.availableCopies : 1,
+          primaryLocation: b.shelfLocation || "General Stacks",
+          shelfLocations: b.shelfLocation ? [b.shelfLocation] : ["General Stacks"],
+        };
+      }
+    }
+  } catch {}
+  return BOOKS.find((b) => b.id === id);
 }
 
 export default async function BookDetailPage({
@@ -24,7 +66,7 @@ export default async function BookDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const book = BOOKS.find((b) => b.id === id);
+  const book = await getLiveBook(id);
 
   if (!book) {
     notFound();
