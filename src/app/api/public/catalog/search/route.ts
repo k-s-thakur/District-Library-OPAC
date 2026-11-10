@@ -3,6 +3,24 @@ import { BOOKS } from "@/data/mockData";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
+
+  // Try live database backend via Admin Portal if reachable
+  const adminUrl = process.env.ADMIN_PORTAL_URL || "http://localhost:3001";
+  try {
+    const res = await fetch(`${adminUrl}/api/public/catalog/search?${searchParams.toString()}`, {
+      next: { revalidate: 15 },
+      signal: AbortSignal.timeout(4000),
+    });
+    if (res.ok) {
+      const liveData = await res.json();
+      if (liveData && liveData.items) {
+        return NextResponse.json(liveData);
+      }
+    }
+  } catch {
+    // Fallback to local mock data
+  }
+
   const q = searchParams.get("q")?.toLowerCase().trim() || "";
   const category = searchParams.get("category") || "";
   const sort = searchParams.get("sort") || "relevance";
