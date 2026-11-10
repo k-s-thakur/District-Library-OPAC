@@ -23,6 +23,36 @@ export default function AccountPage() {
   const router = useRouter();
   const [member, setMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
+  const [renewingLoanId, setRenewingLoanId] = useState<string | null>(null);
+  const [actionNotice, setActionNotice] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  const handleRenewLoan = async (loanId: string) => {
+    setRenewingLoanId(loanId);
+    setActionNotice(null);
+    try {
+      const res = await fetch("/api/circulation/renew", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ loanId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Unable to renew loan");
+      }
+      setActionNotice({
+        message: data.message || "Book loan successfully renewed for 14 additional days!",
+        type: "success",
+      });
+      await fetchMemberData();
+    } catch (err: any) {
+      setActionNotice({
+        message: err.message || "Failed to renew book loan",
+        type: "error",
+      });
+    } finally {
+      setRenewingLoanId(null);
+    }
+  };
 
   const fetchMemberData = async () => {
     setLoading(true);
@@ -159,6 +189,32 @@ export default function AccountPage() {
         </div>
       </div>
 
+      {/* Action Notice Alert */}
+      {actionNotice && (
+        <div
+          className={`p-3.5 rounded-xl border flex items-center justify-between text-xs ${
+            actionNotice.type === "success"
+              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+              : "bg-rose-50 border-rose-200 text-rose-800"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {actionNotice.type === "success" ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            ) : (
+              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+            )}
+            <span className="font-medium">{actionNotice.message}</span>
+          </div>
+          <button
+            onClick={() => setActionNotice(null)}
+            className="text-[11px] font-bold underline opacity-75 hover:opacity-100 cursor-pointer"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Borrowed Books */}
       <section className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -217,6 +273,16 @@ export default function AccountPage() {
                         Active
                       </span>
                     )}
+
+                    <button
+                      onClick={() => handleRenewLoan(loan.id)}
+                      disabled={renewingLoanId === loan.id}
+                      className="flex items-center gap-1 px-3 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-lg text-[11px] font-semibold transition cursor-pointer disabled:opacity-50"
+                      title="Request 14-day loan extension"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${renewingLoanId === loan.id ? "animate-spin" : ""}`} />
+                      <span>{renewingLoanId === loan.id ? "Renewing..." : "Renew"}</span>
+                    </button>
                   </div>
                 </div>
               );
