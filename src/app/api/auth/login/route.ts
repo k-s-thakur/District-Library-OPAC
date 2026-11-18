@@ -1,28 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
-import { DEMO_USERS } from "@/data/mockData";
+import { authenticateMember } from "@/lib/supabase";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    let user = null;
+    let user: any = null;
 
-    if (body.role && DEMO_USERS[body.role]) {
-      user = DEMO_USERS[body.role];
-    } else if (body.identifier) {
-      const id = body.identifier.toLowerCase();
-      if (id.includes("librarian") || id.includes("patel")) {
-        user = DEMO_USERS.LIBRARIAN;
-      } else if (id.includes("accounts") || id.includes("agarwal")) {
-        user = DEMO_USERS.ACCOUNTS_OPERATOR;
-      } else if (id.includes("admin") || id.includes("thakur")) {
-        user = DEMO_USERS.SUPER_ADMIN;
+    if (body.identifier) {
+      // Look up real member from Supabase database
+      const member = await authenticateMember(body.identifier);
+      if (member) {
+        user = member;
       } else {
-        // Default citizen member (Rahul Verma)
-        user = DEMO_USERS.MEMBER;
+        return NextResponse.json(
+          { error: `Member "${body.identifier}" not found in library register. Please check your Member ID or register.` },
+          { status: 404 }
+        );
+      }
+    } else if (body.role) {
+      // Quick sign-in support
+      if (body.role === "MEMBER") {
+        const defaultMember = await authenticateMember("GPL-2026-00001");
+        user = defaultMember || {
+          id: "bd8a3fd9-8065-4240-8272-0eabea1324b9",
+          memberNo: "GPL-2026-00001",
+          fullName: "Rahul Verma",
+          email: "rahul.verma@student.delhiuniv.ac.in",
+          role: "MEMBER",
+        };
+      } else {
+        user = {
+          id: "staff-1",
+          fullName: body.role === "SUPER_ADMIN" ? "Khagendra Singh (Admin)" : "Library Staff",
+          role: body.role,
+        };
       }
     } else {
       return NextResponse.json(
-        { error: "Invalid credentials or role specified." },
+        { error: "Invalid credentials or Member ID required." },
         { status: 400 }
       );
     }
@@ -32,8 +47,8 @@ export async function POST(request: NextRequest) {
       user,
     });
 
-    // Set cookie for session persistence (7 days)
-    response.cookies.set("library_session", user.role, {
+    // Store user JSON in cookie for session persistence (7 days)
+    response.cookies.set("library_session", encodeURIComponent(JSON.stringify(user)), {
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
       sameSite: "lax",

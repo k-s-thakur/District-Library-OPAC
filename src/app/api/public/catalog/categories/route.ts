@@ -1,23 +1,12 @@
 import { NextResponse } from "next/server";
-import { CATEGORIES } from "@/data/mockData";
+import { fetchCategories } from "@/lib/supabase";
 
 export async function GET() {
-  const adminUrl = process.env.ADMIN_PORTAL_URL || "http://localhost:3001";
   try {
-    const res = await fetch(`${adminUrl}/api/public/catalog/categories`, {
-      next: { revalidate: 60 },
-      signal: AbortSignal.timeout(3000),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.categories && data.categories.length > 0) {
-        return NextResponse.json(data);
-      }
-    }
-  } catch {
-    // Admin portal not reachable or timed out, fallback to mock data
+    const categories = await fetchCategories();
+    return NextResponse.json({ categories });
+  } catch (err: any) {
+    console.error("Categories API route error:", err);
+    return NextResponse.json({ error: err.message || "Failed to fetch categories" }, { status: 500 });
   }
-
-  return NextResponse.json({ categories: CATEGORIES });
 }
-

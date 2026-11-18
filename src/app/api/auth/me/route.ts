@@ -1,29 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { DEMO_USERS } from "@/data/mockData";
+import { authenticateMember } from "@/lib/supabase";
 
 export async function GET(request: NextRequest) {
   const sessionCookie = request.cookies.get("library_session");
-  
+
   if (!sessionCookie || !sessionCookie.value) {
     return NextResponse.json({ user: null });
   }
 
   try {
-    const role = sessionCookie.value.toUpperCase();
-    const user = DEMO_USERS[role];
-    if (user) {
-      return NextResponse.json({ user });
-    }
-    // Also support JSON in cookie
+    const rawVal = sessionCookie.value;
+
+    // Try decoding JSON user payload
     try {
-      const parsed = JSON.parse(decodeURIComponent(sessionCookie.value));
-      if (parsed && parsed.role && DEMO_USERS[parsed.role]) {
-        return NextResponse.json({ user: DEMO_USERS[parsed.role] });
+      const decoded = decodeURIComponent(rawVal);
+      const parsed = JSON.parse(decoded);
+      if (parsed && (parsed.id || parsed.role)) {
+        return NextResponse.json({ user: parsed });
       }
     } catch {}
-    
-    // Default to Rahul Verma if valid session cookie exists
-    return NextResponse.json({ user: DEMO_USERS.MEMBER });
+
+    // Fallback: look up member by value
+    const member = await authenticateMember(rawVal);
+    if (member) {
+      return NextResponse.json({ user: member });
+    }
+
+    return NextResponse.json({ user: null });
   } catch {
     return NextResponse.json({ user: null });
   }

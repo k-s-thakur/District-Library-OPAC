@@ -1,27 +1,10 @@
 import React from "react";
 import Link from "next/link";
 import { ArrowLeft, BookOpen } from "lucide-react";
-import { CATEGORIES } from "@/data/mockData";
-
-async function getCategories() {
-  const adminUrl = process.env.ADMIN_PORTAL_URL || "http://localhost:3001";
-  try {
-    const res = await fetch(`${adminUrl}/api/public/catalog/categories`, {
-      next: { revalidate: 60 },
-      signal: AbortSignal.timeout(3000),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.categories && data.categories.length > 0) {
-        return data.categories;
-      }
-    }
-  } catch {}
-  return CATEGORIES;
-}
+import { fetchCategories } from "@/lib/supabase";
 
 export default async function CategoriesPage() {
-  const categories = await getCategories();
+  const categories = await fetchCategories();
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Header */}

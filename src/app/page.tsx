@@ -10,35 +10,18 @@ import {
   CheckCircle2
 } from "lucide-react";
 import BookCarousel from "@/components/BookCarousel";
-import { BOOKS, CATEGORIES } from "@/data/mockData";
+import { fetchCatalogBooks, fetchCategories } from "@/lib/supabase";
 
 async function getLiveCatalog() {
-  const adminUrl = process.env.ADMIN_PORTAL_URL || "http://localhost:3001";
-  try {
-    const [booksRes, catsRes] = await Promise.all([
-      fetch(`${adminUrl}/api/public/catalog/search?limit=30`, {
-        next: { revalidate: 30 },
-        signal: AbortSignal.timeout(3000),
-      }),
-      fetch(`${adminUrl}/api/public/catalog/categories`, {
-        next: { revalidate: 60 },
-        signal: AbortSignal.timeout(3000),
-      }),
-    ]);
-    if (booksRes.ok && catsRes.ok) {
-      const bData = await booksRes.json();
-      const cData = await catsRes.json();
-      if (bData.items && bData.items.length > 0) {
-        return {
-          books: bData.items,
-          categories: cData.categories && cData.categories.length > 0 ? cData.categories : CATEGORIES,
-        };
-      }
-    }
-  } catch {
-    // Admin offline fallback
-  }
-  return { books: BOOKS, categories: CATEGORIES };
+  const [catalogResult, categories] = await Promise.all([
+    fetchCatalogBooks({ limit: 50 }),
+    fetchCategories(),
+  ]);
+
+  return {
+    books: catalogResult.items,
+    categories,
+  };
 }
 
 export default async function HomePage() {
